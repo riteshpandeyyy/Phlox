@@ -1,0 +1,4 @@
+/**
+ * Data transfer objects used at API boundaries.
+ */
+package com.phlox.backend.dto;
