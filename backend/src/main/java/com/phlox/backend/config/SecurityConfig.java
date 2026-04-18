@@ -15,6 +15,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.*;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -28,13 +30,20 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/application/apply").hasAuthority("CREATOR")
-                .requestMatchers("/application/**").hasAuthority("BRAND")
-                .requestMatchers("/creator/**").hasAuthority("CREATOR")
-                .requestMatchers("/brand/**").hasAuthority("BRAND")
+
+                .requestMatchers("/application/apply").hasRole("CREATOR")
+
+                .requestMatchers("/application/creator").hasRole("CREATOR")
+                .requestMatchers("/application/campaign/**").hasRole("BRAND")
+                .requestMatchers("/application/status").hasRole("BRAND")
+
+                .requestMatchers("/creator/**").hasRole("CREATOR")
+                .requestMatchers("/brand/**").hasRole("BRAND")
+
                 .anyRequest().authenticated()
             )
                 .authenticationProvider(authenticationProvider())
@@ -58,5 +67,18 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000", "http://localhost:8089"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 }

@@ -42,7 +42,11 @@ public class AuthServiceImpl implements AuthService {
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
         String token = jwtUtil.generateToken(userDetails);
-        return AuthResponse.builder().token(token).build();
+        return AuthResponse.builder()
+                .token(token)
+                .role(user.getRole().name())
+                .email(user.getEmail())
+                .build();
     }
 
     @Override
@@ -54,8 +58,15 @@ public class AuthServiceImpl implements AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
         }
 
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+        
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
         String token = jwtUtil.generateToken(userDetails);
-        return AuthResponse.builder().token(token).build();
+        return AuthResponse.builder()
+                .token(token)
+                .role(user.getRole().name())
+                .email(user.getEmail())
+                .build();
     }
 }

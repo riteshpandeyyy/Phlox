@@ -122,15 +122,28 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || authentication.getName() == null) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
 
-        return userRepository.findByEmail(authentication.getName())
+        Object principal = authentication.getPrincipal();
+
+        if (!(principal instanceof org.springframework.security.core.userdetails.User)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid user");
+        }
+
+        String email = ((org.springframework.security.core.userdetails.User) principal).getUsername();
+
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+        
+        System.out.println("Current user: " + email + " with role: " + user.getRole());
+        return user;
     }
 
     private void ensureRole(User user, UserRole requiredRole) {
+        System.out.println("Checking role - User has: " + user.getRole() + ", Required: " + requiredRole);
         if (user.getRole() != requiredRole) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied for role: " + user.getRole());
         }
